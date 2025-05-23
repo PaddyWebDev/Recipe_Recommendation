@@ -4,10 +4,16 @@ from flask import Flask, request,make_response
 import joblib
 from flask_cors import CORS
 from operator import itemgetter
+from dotenv import load_dotenv
+import os
 
+
+
+
+load_dotenv()
 app = Flask(__name__)
-
-CORS(app)
+frontend_url = os.getenv('FRONTEND_URL')
+CORS(app,origins=[frontend_url])
 
 
 cv = joblib.load("models/vectorizer.pkl")
@@ -15,14 +21,14 @@ vectorMatrix = joblib.load("models/vector_matrix.pkl")
 df = joblib.load("models/dataFrame.pkl")
 
 
-def recommend_by_preferences(ingredients: str, cuisine: str, course: str, diet: str, max_time: int):
+def recommend_by_preferences(ingredients: str, cuisine: str, course: str, diet: str, max_time: str):
     # Combine user input into the same format
     user_input = ' '.join([
         ingredients.lower(),
         cuisine.lower(),
         course.lower(),
         diet.lower(),
-        str(max_time)
+        max_time
     ])
 
     user_vector = cv.transform([user_input])
@@ -45,8 +51,8 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-
         data = request.get_json()
+
         
         if(not data):
             return make_response({
@@ -57,7 +63,6 @@ def predict():
             }, 400)
         
         ingredients, cuisine, course, diet, cooking_time = itemgetter('ingredients', 'cuisine', 'course', 'diet', 'cooking_time')(data)
-        cooking_time = int(cooking_time)
 
         recommendation = recommend_by_preferences(ingredients, cuisine, course, diet, cooking_time)
         
