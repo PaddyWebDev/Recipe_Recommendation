@@ -38,7 +38,7 @@ def recommend_by_preferences(ingredients: str, cuisine: str, course: str, diet: 
     top_indices = similarity_scores.argsort()[-5:][::-1]
     recommendations = []
     for idx in top_indices:
-        recommendations.append(df.iloc[idx].to_dict())
+        recommendations.append(df.iloc[idx].to_dict(), idx)
     return recommendations
 
 
