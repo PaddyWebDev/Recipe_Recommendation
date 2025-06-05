@@ -4,16 +4,12 @@ from flask import Flask, request,make_response
 import joblib
 from flask_cors import CORS
 from operator import itemgetter
-from dotenv import load_dotenv
 import os
 
 
 
-
-load_dotenv()
 app = Flask(__name__)
-frontend_url = os.getenv('FRONTEND_URL')
-CORS(app,origins=[frontend_url])
+CORS(app)
 
 
 cv = joblib.load("models/vectorizer.pkl")
@@ -22,7 +18,6 @@ df = joblib.load("models/dataFrame.pkl")
 
 
 def recommend_by_preferences(ingredients: str, cuisine: str, course: str, diet: str, max_time: str):
-    # Combine user input into the same format
     user_input = ' '.join([
         ingredients.lower(),
         cuisine.lower(),
@@ -34,11 +29,17 @@ def recommend_by_preferences(ingredients: str, cuisine: str, course: str, diet: 
     user_vector = cv.transform([user_input])
     similarity_scores = cosine_similarity(user_vector, vectorMatrix).flatten()
 
-    # Get top 5 recommendations
+    # Get top 5 similar recipe indices
     top_indices = similarity_scores.argsort()[-5:][::-1]
+
     recommendations = []
     for idx in top_indices:
-        recommendations.append(df.iloc[idx].to_dict(), idx)
+        recipe = {
+            "idx": int(idx),  # Cast to int for safe JSON serialization
+            "title": df.iloc[idx].to_dict()["TranslatedRecipeName"]
+        }
+        recommendations.append(recipe)
+
     return recommendations
 
 
@@ -52,8 +53,6 @@ def home():
 def predict():
     try:
         data = request.get_json()
-
-        
         if(not data):
             return make_response({
                 "Error" : {
@@ -72,7 +71,7 @@ def predict():
         "prediction": recommendation
     }}, 200)
     except Exception as e:
-      return make_response({"Error": {"code": 500, "message": str(e)}}, 500)
+        return make_response({"Error": {"code": 500, "message": str(e)}}, 500)
 
 if __name__ == '__main__':
     app.run(debug=True)
