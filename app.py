@@ -73,6 +73,19 @@ def predict():
     except Exception as e:
         return make_response({"Error": {"code": 500, "message": str(e)}}, 500)
 
+
+@app.route('/recipe/<recipe_id>', methods=['GET'])
+def get_recipe(recipe_id):
+    try:
+        return make_response({
+            "Success": {
+                "code": 200,
+                "recipe": df.iloc[int(recipe_id)].to_dict()
+            }
+        })
+    except Exception as e:
+        return make_response({"Error": {"code": 500, "message": str(e)}}, 500)
+    
 if __name__ == '__main__':
     app.run(debug=True)
 
