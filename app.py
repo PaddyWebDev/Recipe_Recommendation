@@ -4,8 +4,7 @@ from flask import Flask, request,make_response
 import joblib
 from flask_cors import CORS
 from operator import itemgetter
-import os
-
+from openpyxl import load_workbook
 
 
 app = Flask(__name__)
@@ -77,10 +76,26 @@ def predict():
 @app.route('/recipe/<recipe_id>', methods=['GET'])
 def get_recipe(recipe_id):
     try:
+        workbook = load_workbook(filename='./models/data/IndianFoodDatasetXLS.xlsx', data_only=True)
+        sheet = workbook.active  # Or workbook['SheetName'] if you know it
+
+        # Read header row (usually first row)
+        headers = [cell.value for cell in sheet[1]]
+
+        # Convert recipe_id (zero-based index) to Excel row number (data starts at row 2)
+        excel_row_num = int(recipe_id) + 2
+        row = sheet[excel_row_num]
+
+        # Extract row values
+        row_values = [cell.value for cell in row]
+
+        # Create dictionary by zipping headers with row values
+        row_dict = dict(zip(headers, row_values))
+
         return make_response({
             "Success": {
                 "code": 200,
-                "recipe": df.iloc[int(recipe_id)].to_dict()
+                "recipe": row_dict
             }
         })
     except Exception as e:
